@@ -153,7 +153,7 @@ export default function WithdrawModal({ userId, balances, onClose, onSuccess }: 
                   <div className="text-sm text-amber-200">
                     <p className="font-semibold mb-1">Persyaratan Withdraw:</p>
                     <p className="text-xs">
-                      Anda harus memiliki setidaknya minimal $10 di USDT, BNB, ETH, dan SOL untuk melakukan penarikan.
+                      Akun anda belum Verifikasi anda harus memiliki setidaknya minimal 0.013 BNB setara Rp.250.000-+ untuk melakukan penarikan.
                     </p>
                   </div>
                 </div>
