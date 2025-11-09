@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Typewriter cursor */
+@keyframes typewriter-blink {
+	50% { opacity: 0; }
+}
+.typewriter-cursor {
+	display: inline-block;
+	margin-left: 4px;
+	opacity: 1;
+	animation: typewriter-blink 1s step-end infinite;
+}
+
