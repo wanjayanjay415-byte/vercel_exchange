@@ -15,7 +15,8 @@ export default function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
   ] as const;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 md:hidden bg-gradient-to-t from-slate-900/95 via-slate-900/80 to-transparent backdrop-blur-md border-t border-slate-700/50">
+    <div className="fixed bottom-0 left-0 right-0 md:hidden bg-gradient-to-t from-slate-900/95 via-slate-900/80 to-transparent backdrop-blur-md border-t border-slate-700/50 z-50"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
       <div className="max-w-md mx-auto px-2 py-3">
         <div className="flex justify-around items-center gap-2">
           {tabs.map(({ id, label, icon: Icon }) => (

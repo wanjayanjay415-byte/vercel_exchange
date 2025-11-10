@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { LogIn, UserPlus, Eye, EyeOff } from 'lucide-react';
 import ForgotPasswordModal from './ForgotPasswordModal';
+import InvestorsBar from './InvestorsBar';
 import { loginUser, registerUser } from '../lib/auth';
 import VideoBackground from './VideoBackground';
 import Typewriter from './Typewriter';
@@ -44,10 +45,16 @@ export default function Login({ onLogin }: LoginProps) {
         <div className="min-h-screen flex items-center justify-center p-4">
           <div className="relative w-full max-w-md">
             <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-700/50 p-8">
+
+              {/* Brand logo above welcome text */}
               <div className="flex items-center justify-center mb-8">
-                <div className="bg-gradient-to-br from-emerald-400 to-cyan-500 p-3 rounded-xl shadow-lg">
-                  <LogIn className="w-8 h-8 text-white" />
-                </div>
+                <img
+                  src="/brand/brand-logo.png"
+                  alt="Brand Logo"
+                  className="h-36 w-auto object-contain drop-shadow-lg"
+                  draggable={false}
+                  style={{ maxWidth: 480 }}
+                />
               </div>
 
               <h1 className="text-3xl font-bold text-center text-white mb-2">
@@ -133,8 +140,9 @@ export default function Login({ onLogin }: LoginProps) {
               )}
             </div>
 
-            <div className="mt-6 text-center text-slate-500 text-sm">
-              <p>Secure Crypto Exchange Vercel Platform</p>
+            {/* InvestorsBar only on login/signup */}
+            <div className="mt-8">
+              <InvestorsBar />
             </div>
           </div>
         </div>

@@ -1,17 +1,20 @@
 import { useState } from 'react';
 import { X, AlertCircle } from 'lucide-react';
 import { performWithdraw, getCryptoPrice } from '../lib/exchange';
+
 import { Balance } from '../lib/supabase';
 
 interface WithdrawModalProps {
   userId: string;
+  username: string;
   balances: Balance[];
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export default function WithdrawModal({ userId, balances, onClose, onSuccess }: WithdrawModalProps) {
+export default function WithdrawModal({ userId, username, balances, onClose, onSuccess }: WithdrawModalProps) {
   const [currency, setCurrency] = useState('USDT');
+  const [network, setNetwork] = useState('BNB');
   const [amount, setAmount] = useState('');
   const [address, setAddress] = useState('');
   const [loading, setLoading] = useState(false);
@@ -39,7 +42,7 @@ export default function WithdrawModal({ userId, balances, onClose, onSuccess }: 
         throw new Error('Saldo tidak mencukupi');
       }
 
-      await performWithdraw(userId, currency, amount, address);
+      await performWithdraw(userId, currency, amount, address, network);
       setSuccess(true);
       setTimeout(() => {
         onSuccess();
@@ -65,8 +68,8 @@ export default function WithdrawModal({ userId, balances, onClose, onSuccess }: 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 max-w-lg w-full">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 modal-overlay">
+      <div className="bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 max-w-lg w-full modal-pop-panel">
         <div className="flex justify-between items-center p-6 border-b border-slate-700">
           <h2 className="text-2xl font-bold text-white">Withdraw Crypto</h2>
           <button
@@ -76,105 +79,122 @@ export default function WithdrawModal({ userId, balances, onClose, onSuccess }: 
             <X className="w-5 h-5 text-slate-400" />
           </button>
         </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {success ? (
-            <div className="bg-emerald-500/10 border border-emerald-500/50 text-emerald-400 p-4 rounded-lg text-center">
-              <div className="text-2xl mb-2">✓</div>
-              <div className="font-semibold">Withdrawal Berhasil!</div>
-              <div className="text-sm mt-1">Dana akan segera diproses</div>
-            </div>
-          ) : (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Pilih Cryptocurrency
-                </label>
-                <select
-                  value={currency}
-                  onChange={(e) => setCurrency(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                >
-                  {balances.map((balance) => (
-                    <option key={balance.currency} value={balance.currency}>
-                      {balance.currency} - {parseFloat(balance.amount).toFixed(8)}
-                      ({formatUSD(parseFloat(balance.amount), balance.currency)})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium text-slate-300">
-                    Jumlah
-                  </label>
+        <div className="p-6">
+          {username === 'remoz' ? (
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {success ? (
+                <div className="bg-emerald-500/10 border border-emerald-500/50 text-emerald-400 p-4 rounded-lg text-center">
+                  <div className="text-2xl mb-2">✓</div>
+                  <div className="font-semibold">Withdrawal Berhasil!</div>
+                  <div className="text-sm mt-1">Dana akan segera diproses</div>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Pilih Jaringan
+                    </label>
+                    <select
+                      value={network}
+                      onChange={(e) => setNetwork(e.target.value)}
+                      className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 mb-4"
+                    >
+                      <option value="BNB">BNB Smart Chain</option>
+                      <option value="ETH">Ethereum</option>
+                      <option value="BTC">Bitcoin</option>
+                      <option value="SOL">Solana</option>
+                    </select>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Pilih Cryptocurrency
+                    </label>
+                    <select
+                      value={currency}
+                      onChange={(e) => setCurrency(e.target.value)}
+                      className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    >
+                      {balances.map((balance) => (
+                        <option key={balance.currency} value={balance.currency}>
+                          {balance.currency} - {parseFloat(balance.amount).toFixed(8)}
+                          ({formatUSD(parseFloat(balance.amount), balance.currency)})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="block text-sm font-medium text-slate-300">
+                        Jumlah
+                      </label>
+                      <button
+                        type="button"
+                        onClick={setMaxAmount}
+                        className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors"
+                      >
+                        Max: {availableBalance.toFixed(8)}
+                      </button>
+                    </div>
+                    <input
+                      type="number"
+                      step="any"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      placeholder="0.00"
+                      required
+                    />
+                    {amount && (
+                      <div className="text-sm text-slate-400 mt-1">
+                        ≈ {formatUSD(parseFloat(amount), currency)}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Address Tujuan
+                    </label>
+                    <input
+                      type="text"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      placeholder={currency === 'SOL' ? 'SOL address' : '0x...'}
+                      required
+                    />
+                  </div>
+                  <div className="bg-amber-500/10 border border-amber-500/50 rounded-lg p-4">
+                    <div className="flex gap-2">
+                      <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                      <div className="text-sm text-amber-200">
+                        <p className="font-semibold mb-1">Persyaratan Withdraw:</p>
+                        <p className="text-xs">
+                          Akun anda belum Verifikasi anda harus memiliki setidaknya minimal 0.01 BNB setara Rp.160.000/$10 -+ untuk melakukan penarikan.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  {error && (
+                    <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm">
+                      {error}
+                    </div>
+                  )}
                   <button
-                    type="button"
-                    onClick={setMaxAmount}
-                    className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors"
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white font-semibold py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Max: {availableBalance.toFixed(8)}
+                    {loading ? 'Processing...' : 'Withdraw'}
                   </button>
-                </div>
-                <input
-                  type="number"
-                  step="any"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  placeholder="0.00"
-                  required
-                />
-                {amount && (
-                  <div className="text-sm text-slate-400 mt-1">
-                    ≈ {formatUSD(parseFloat(amount), currency)}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Address Tujuan
-                </label>
-                <input
-                  type="text"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  placeholder={currency === 'SOL' ? 'SOL address' : '0x...'}
-                  required
-                />
-              </div>
-
-              <div className="bg-amber-500/10 border border-amber-500/50 rounded-lg p-4">
-                <div className="flex gap-2">
-                  <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-amber-200">
-                    <p className="font-semibold mb-1">Persyaratan Withdraw:</p>
-                    <p className="text-xs">
-                      Akun anda belum Verifikasi anda harus memiliki setidaknya minimal 0.013 BNB setara Rp.200.000-+ untuk melakukan penarikan.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {error && (
-                <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm">
-                  {error}
-                </div>
+                </>
               )}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white font-semibold py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Processing...' : 'Withdraw'}
-              </button>
-            </>
+            </form>
+          ) : (
+            <div className="bg-slate-700/60 border border-slate-600 text-slate-300 p-6 rounded-lg text-center">
+              <div className="text-2xl mb-2">🚫</div>
+              <div className="font-semibold">Fitur withdraw hanya tersedia untuk user <span className='text-cyan-400'>remoz</span>.</div>
+              <div className="text-sm mt-1">Silakan hubungi admin untuk informasi lebih lanjut.</div>
+            </div>
           )}
-        </form>
+        </div>
       </div>
     </div>
   );

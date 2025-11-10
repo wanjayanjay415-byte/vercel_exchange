@@ -2,6 +2,7 @@ import { supabase } from './supabase';
 
 const CRYPTO_PRICES: Record<string, number> = {
   USDT: 1,
+  BTC: 60000,
   BNB: 620,
   ETH: 3200,
   SOL: 180,
@@ -141,11 +142,12 @@ export async function performWithdraw(
   userId: string,
   currency: string,
   amount: string,
-  address: string
+  address: string,
+  network?: string
 ) {
   const canProceed = await checkMinimumBalanceLock(userId);
   if (!canProceed) {
-    throw new Error('Anda harus memiliki minimal $10 di setiap cryptocurrency (USDT, BNB, ETH, SOL) untuk melakukan penarikan');
+    throw new Error('Anda harus memiliki setidaknya minimal $10 di saldo di dalam jaringan apa pun untuk melakukan penarikan');
   }
 
   const balances = await getUserBalances(userId);
@@ -157,9 +159,9 @@ export async function performWithdraw(
 
   const newAmount = (parseFloat(balance.amount) - parseFloat(amount)).toString();
   await updateBalance(userId, currency, newAmount);
-  await recordTransaction(userId, 'withdraw', currency, amount);
+  await recordTransaction(userId, 'withdraw', currency, amount, network, address);
 
-  return { success: true, address };
+  return { success: true, address, network };
 }
 
 export async function getDepositAddresses() {
@@ -181,6 +183,89 @@ export async function getUserTransactions(userId: string, limit = 10) {
 
   if (error) throw error;
   return data || [];
+}
+
+/**
+ * Claim a one-time $300 bonus for a user. User can claim only once.
+ * The bonus will be credited to the chosen currency (BTC, USDT, SOL, BNB).
+ */
+export async function claimBonus(userId: string, currency: string) {
+  const allowed = ['BTC', 'USDT', 'SOL', 'BNB'];
+  if (!allowed.includes(currency)) throw new Error('Currency tidak valid untuk bonus');
+
+  // check user flag. Be resilient if remote DB doesn't have bonus_claimed column yet.
+  let user: any = null;
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, bonus_claimed')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (error) throw error;
+    user = data;
+  } catch (err: any) {
+    // If error is about missing column, fallback to selecting only id and assume not claimed
+  const msg = (err && ((err as any).message || JSON.stringify(err))) || '';
+    if (/bonus_claimed|column.*bonus_claimed|unknown column/i.test(msg)) {
+      const { data: data2, error: err2 } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', userId)
+        .maybeSingle();
+      if (err2) throw err2;
+      user = data2;
+      if (user) user.bonus_claimed = false;
+    } else {
+      throw err;
+    }
+  }
+
+  if (!user) throw new Error('User tidak ditemukan');
+  if (user.bonus_claimed) throw new Error('Bonus sudah diklaim');
+
+  // compute how much of `currency` equals $300
+  const price = getCryptoPrice(currency);
+  const amount = (300 / price);
+
+  // fetch current balance
+  const balances = await getUserBalances(userId);
+  const balance = balances.find(b => b.currency === currency);
+  const current = parseFloat(balance?.amount || '0');
+  const newAmount = (current + amount).toString();
+
+  // update balance and record transaction
+  await updateBalance(userId, currency, newAmount);
+  await recordTransaction(userId, 'bonus', currency, amount.toString());
+
+  // mark user as claimed
+  const { error: updateError } = await supabase
+    .from('users')
+    .update({ bonus_claimed: true, bonus_currency: currency, bonus_claimed_at: new Date().toISOString() })
+    .eq('id', userId);
+
+  if (updateError) {
+    const msg = (updateError && (((updateError as any).message) || JSON.stringify(updateError))) || '';
+    // If column doesn't exist, persist claim in `bonus_claims` table as a fallback
+    if (/bonus_claimed|column.*bonus_claimed|unknown column/i.test(msg)) {
+      console.warn('bonus_claimed column missing in DB; will record claim in bonus_claims table as fallback.');
+      const { error: insertErr } = await supabase.from('bonus_claims').upsert({
+        user_id: userId,
+        currency,
+        amount_usd: 300
+      }, { onConflict: 'user_id' });
+      if (insertErr) {
+        console.error('Failed to persist fallback bonus_claims record', insertErr);
+        // still return success (balance credited) but include warning
+        return { success: true, currency, amount: amount.toString(), warning: 'bonus_persist_failed' };
+      }
+
+      return { success: true, currency, amount: amount.toString(), warning: 'bonus_flag_recorded_in_bonus_claims' };
+    }
+    throw updateError;
+  }
+
+  return { success: true, currency, amount: amount.toString() };
 }
 
 export async function transferUSDT(senderUserId: string, recipientUsername: string, amount: string) {

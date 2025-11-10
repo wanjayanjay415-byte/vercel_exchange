@@ -1,6 +1,50 @@
+@keyframes investor-carousel {
+	0% { transform: translateX(0); }
+	100% { transform: translateX(-100%); }
+}
+.investor-carousel-track {
+	display: flex;
+	gap: 2rem;
+	animation: investor-carousel 32s linear infinite;
+	will-change: transform;
+}
+.investor-carousel-outer {
+	overflow: hidden;
+	width: 100%;
+	padding-top: 0.75rem;
+	padding-bottom: 0.75rem;
+	background: transparent;
+}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Mobile adjustments */
+html, body {
+	-webkit-text-size-adjust: 100%; /* prevent automatic font scaling on iOS */
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+button, a {
+	touch-action: manipulation;
+}
+
+/* Prevent horizontal scroll caused by off-canvas elements */
+html, body, #root {
+  overflow-x: hidden;
+}
+
+/* Box sizing and responsive media */
+*, *::before, *::after {
+	box-sizing: border-box;
+}
+
+img, video, canvas {
+	max-width: 100%;
+	height: auto;
+	display: block;
+}
 
 /* Typewriter cursor */
 @keyframes typewriter-blink {
@@ -11,5 +55,55 @@
 	margin-left: 4px;
 	opacity: 1;
 	animation: typewriter-blink 1s step-end infinite;
+}
+
+/* Claim card pop + float */
+@keyframes claim-pop {
+	0% { transform: translateY(20px) scale(0.95); opacity: 0; }
+	60% { transform: translateY(-8px) scale(1.03); opacity: 1; }
+	100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes claim-float {
+	0% { transform: translateY(0); }
+	50% { transform: translateY(-6px); }
+	100% { transform: translateY(0); }
+}
+
+.claim-card-pop {
+	animation: claim-pop 480ms cubic-bezier(.2,.9,.2,1) forwards;
+}
+
+.claim-card-float {
+	animation: claim-float 4s ease-in-out infinite;
+}
+
+/* Modal overlay fade + panel pop animation */
+@keyframes overlay-fade {
+	from { opacity: 0; }
+	to { opacity: 1; }
+}
+
+@keyframes modal-pop {
+	0% { transform: translateY(12px) scale(0.985); opacity: 0; }
+	60% { transform: translateY(-6px) scale(1.02); opacity: 1; }
+	100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.modal-overlay {
+	animation: overlay-fade 200ms ease forwards;
+}
+
+.modal-pop-panel {
+	animation: modal-pop 360ms cubic-bezier(.2,.9,.2,1) both;
+}
+
+@keyframes balance-card-pop {
+	0% { transform: translateY(18px) scale(0.97); opacity: 0; }
+	60% { transform: translateY(-8px) scale(1.03); opacity: 1; }
+	100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+.balance-card-pop {
+	animation: balance-card-pop 480ms cubic-bezier(.2,.9,.2,1) both;
 }
 

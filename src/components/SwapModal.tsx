@@ -83,8 +83,8 @@ export default function SwapModal({ userId, balances, onClose, onSuccess }: Swap
   const availableCurrencies = balances.map(b => b.currency);
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 max-w-lg w-full">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 modal-overlay">
+      <div className="bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 max-w-lg w-full modal-pop-panel">
         <div className="flex justify-between items-center p-6 border-b border-slate-700">
           <h2 className="text-2xl font-bold text-white">Swap Crypto</h2>
           <button

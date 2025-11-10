@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import Loading from './components/Loading';
+import ChartsPage from './pages/ChartsPage';
+import Settings from './components/Settings';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 function App() {
   const [userId, setUserId] = useState<string | null>(null);
@@ -15,7 +18,6 @@ function App() {
       setUserId(savedUserId);
       setUsername(savedUsername);
     }
-    // Simulasi loading selama 1.5 detik
     setTimeout(() => {
       setIsLoading(false);
     }, 1500);
@@ -39,11 +41,15 @@ function App() {
     return <Loading />;
   }
 
-  if (!userId) {
-    return <Login onLogin={handleLogin} />;
-  }
-
-  return <Dashboard userId={userId} username={username} onLogout={handleLogout} />;
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={userId ? <Dashboard userId={userId} username={username} onLogout={handleLogout} /> : <Login onLogin={handleLogin} />} />
+        <Route path="/charts" element={<ChartsPage />} />
+        <Route path="/settings" element={userId ? <Settings userId={userId} /> : <Login onLogin={handleLogin} />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
 export default App;
