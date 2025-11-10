@@ -1,5 +1,4 @@
 import React, { useState, useRef } from 'react';
-import bgVideo from '../assets/videos/video.mp4';
 
 interface VideoBackgroundProps {
   children: React.ReactNode;
@@ -29,7 +28,7 @@ const VideoBackground: React.FC<VideoBackgroundProps> = ({ children }) => {
           setStatus('error');
         }}
       >
-        <source src={bgVideo} type="video/mp4" />
+        <source src="/videos/video.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
 
