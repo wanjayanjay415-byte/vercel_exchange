@@ -6,13 +6,12 @@ import { Balance } from '../lib/supabase';
 
 interface WithdrawModalProps {
   userId: string;
-  username: string;
   balances: Balance[];
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export default function WithdrawModal({ userId, username, balances, onClose, onSuccess }: WithdrawModalProps) {
+export default function WithdrawModal({ userId, balances, onClose, onSuccess }: WithdrawModalProps) {
   const [currency, setCurrency] = useState('USDT');
   const [network, setNetwork] = useState('BNB');
   const [amount, setAmount] = useState('');
@@ -80,17 +79,16 @@ export default function WithdrawModal({ userId, username, balances, onClose, onS
           </button>
         </div>
         <div className="p-6">
-          {username === 'remoz' ? (
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {success ? (
-                <div className="bg-emerald-500/10 border border-emerald-500/50 text-emerald-400 p-4 rounded-lg text-center">
-                  <div className="text-2xl mb-2">✓</div>
-                  <div className="font-semibold">Withdrawal Berhasil!</div>
-                  <div className="text-sm mt-1">Dana akan segera diproses</div>
-                </div>
-              ) : (
-                <>
-                  <div>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {success ? (
+              <div className="bg-emerald-500/10 border border-emerald-500/50 text-emerald-400 p-4 rounded-lg text-center">
+                <div className="text-2xl mb-2">✓</div>
+                <div className="font-semibold">Withdrawal Berhasil!</div>
+                <div className="text-sm mt-1">Dana akan segera diproses</div>
+              </div>
+            ) : (
+              <>
+                <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">
                       Pilih Jaringan
                     </label>
@@ -187,13 +185,6 @@ export default function WithdrawModal({ userId, username, balances, onClose, onS
                 </>
               )}
             </form>
-          ) : (
-            <div className="bg-slate-700/60 border border-slate-600 text-slate-300 p-6 rounded-lg text-center">
-              <div className="text-2xl mb-2">🚫</div>
-              <div className="font-semibold">Fitur withdraw hanya tersedia untuk user <span className='text-cyan-400'>remoz</span>.</div>
-              <div className="text-sm mt-1">Silakan hubungi admin untuk informasi lebih lanjut.</div>
-            </div>
-          )}
         </div>
       </div>
     </div>

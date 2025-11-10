@@ -203,7 +203,6 @@ export default function Dashboard({ userId, username, onLogout }: DashboardProps
           {showWithdraw && (
             <WithdrawModal
               userId={userId}
-              username={username}
               balances={balances || []}
               onClose={() => setShowWithdraw(false)}
               onSuccess={handleRefresh}
