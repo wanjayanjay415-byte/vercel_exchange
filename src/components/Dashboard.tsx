@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { LogOut, TrendingUp, Send, Settings as SettingsIcon } from 'lucide-react';
+import { useLanguage } from '../lib/LanguageContext';
 import SendModal from './SendModal';
 import ClaimBonusCard from './ClaimBonusCard';
 import { getUserById } from '../lib/auth';
@@ -20,6 +21,21 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ userId, username, onLogout }: DashboardProps) {
+  const { lang, setLang } = useLanguage();
+  // Inline language selector component
+  const LanguageSelector = () => (
+    <div className="flex items-center">
+      <select
+        value={lang}
+        onChange={(e) => setLang(e.target.value as any)}
+        className="bg-slate-800/50 text-slate-200 px-2 py-1 rounded-md border border-slate-700"
+        aria-label="Language selector"
+      >
+        <option value="id">Indonesia</option>
+        <option value="en">English</option>
+      </select>
+    </div>
+  );
   // Mining state (temporary, will be persisted later)
   const [miningActive, setMiningActive] = useState(false);
   const [miningProgress, setMiningProgress] = useState(0);
@@ -144,6 +160,8 @@ export default function Dashboard({ userId, username, onLogout }: DashboardProps
               </div>
             </div>
             <div className="hidden md:flex items-center gap-2">
+              {/* Language selector - top right */}
+              <LanguageSelector />
               <button
                 onClick={() => setShowSend(true)}
                 className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 rounded-lg transition-all border border-slate-700"
@@ -169,6 +187,15 @@ export default function Dashboard({ userId, username, onLogout }: DashboardProps
           </header>
           {/* Mobile: fixed top-right quick actions (Settings + Logout) */}
           <div className="fixed top-2 right-2 z-50 md:hidden flex items-center gap-2" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+            <select
+              value={lang}
+              onChange={(e) => setLang(e.target.value as any)}
+              className="bg-slate-800/50 text-slate-200 px-2 py-1 rounded-md border border-slate-700"
+              aria-label="Language selector mobile"
+            >
+              <option value="id">ID</option>
+              <option value="en">EN</option>
+            </select>
             <button
               aria-label="Settings"
               onClick={() => (window.location.href = '/settings')}

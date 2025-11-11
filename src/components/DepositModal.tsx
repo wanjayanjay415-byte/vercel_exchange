@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Copy, Check } from 'lucide-react';
+import { useLanguage } from '../lib/LanguageContext';
 import { getDepositAddresses } from '../lib/exchange';
 import { DepositAddress } from '../lib/supabase';
 
@@ -9,6 +10,7 @@ interface DepositModalProps {
 }
 
 export default function DepositModal({ onClose, onSuccess }: DepositModalProps) {
+  const { lang } = useLanguage();
   const [addresses, setAddresses] = useState<DepositAddress[]>([]);
   const [selectedCurrency, setSelectedCurrency] = useState('USDT');
   const [copied, setCopied] = useState(false);
@@ -59,7 +61,7 @@ export default function DepositModal({ onClose, onSuccess }: DepositModalProps) 
             <>
               <div className="mb-6">
                 <label className="block text-sm font-medium text-slate-300 mb-3">
-                  Pilih Cryptocurrency
+                  {lang === 'id' ? 'Pilih Cryptocurrency' : 'Select Cryptocurrency'}
                 </label>
                 <div className="grid grid-cols-5 gap-2">
                   {addresses.map((addr) => (
@@ -81,7 +83,7 @@ export default function DepositModal({ onClose, onSuccess }: DepositModalProps) 
               {currentAddress && (
                 <div className="space-y-4">
                   <div className="bg-slate-900/50 rounded-xl p-6 border border-slate-700">
-                    <div className="text-sm text-slate-400 mb-2">Deposit Address</div>
+                    <div className="text-sm text-slate-400 mb-2">{lang === 'id' ? 'Deposit Address' : 'Deposit Address'}</div>
                     <div className="flex items-center gap-2">
                       <div className="flex-1 bg-slate-800 p-3 rounded-lg border border-slate-600">
                         <code className="text-emerald-400 text-sm break-all">
@@ -105,13 +107,13 @@ export default function DepositModal({ onClose, onSuccess }: DepositModalProps) 
                     <div className="flex gap-2">
                       <div className="text-amber-500 font-semibold">⚠️</div>
                       <div className="text-sm text-amber-200">
-                        <p className="font-semibold mb-1">Penting:</p>
+                        <p className="font-semibold mb-1">{lang === 'id' ? 'Penting:' : 'Important:'}</p>
                         <ul className="space-y-1 text-xs">
-                          <li>• Hanya kirim {selectedCurrency} ke address ini</li>
-                          <li>• Kirim dari network yang benar</li>
-                          <li>• Deposit akan otomatis masuk setelah konfirmasi blockchain</li>
+                          <li>• {lang === 'id' ? `Hanya kirim ${selectedCurrency} ke address ini` : `Only send ${selectedCurrency} to this address`}</li>
+                          <li>• {lang === 'id' ? 'Kirim dari network yang benar' : 'Send from the correct network'}</li>
+                          <li>• {lang === 'id' ? 'Deposit akan otomatis masuk setelah konfirmasi blockchain' : 'Deposits will be credited after blockchain confirmations'}</li>
                           {(selectedCurrency === 'USDT' || selectedCurrency === 'BNB' || selectedCurrency === 'ETH' || selectedCurrency === 'BASE') && (
-                            <li>• Address untuk EVM compatible chains</li>
+                            <li>• {lang === 'id' ? 'Address untuk EVM compatible chains' : 'Address for EVM-compatible chains'}</li>
                           )}
                         </ul>
                       </div>
@@ -125,7 +127,7 @@ export default function DepositModal({ onClose, onSuccess }: DepositModalProps) 
                     }}
                     className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-semibold py-3 rounded-lg transition-all"
                   >
-                    Saya Sudah Transfer
+                    {lang === 'id' ? 'Saya Sudah Transfer' : 'I Have Transferred'}
                   </button>
                 </div>
               )}

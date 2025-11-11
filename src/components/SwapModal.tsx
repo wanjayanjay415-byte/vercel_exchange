@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, ArrowDownUp, AlertCircle } from 'lucide-react';
 import { performSwap, getCryptoPrice } from '../lib/exchange';
+import { useLanguage } from '../lib/LanguageContext';
 import { Balance } from '../lib/supabase';
 
 interface SwapModalProps {
@@ -11,6 +12,7 @@ interface SwapModalProps {
 }
 
 export default function SwapModal({ userId, balances, onClose, onSuccess }: SwapModalProps) {
+  const { lang } = useLanguage();
   const [fromCurrency, setFromCurrency] = useState('USDT');
   const [toCurrency, setToCurrency] = useState('BNB');
   const [amount, setAmount] = useState('');
@@ -38,15 +40,15 @@ export default function SwapModal({ userId, balances, onClose, onSuccess }: Swap
 
     try {
       if (fromCurrency === toCurrency) {
-        throw new Error('Pilih cryptocurrency yang berbeda');
+        throw new Error(lang === 'id' ? 'Pilih cryptocurrency yang berbeda' : 'Choose a different cryptocurrency');
       }
 
       if (parseFloat(amount) <= 0) {
-        throw new Error('Jumlah harus lebih dari 0');
+        throw new Error(lang === 'id' ? 'Jumlah harus lebih dari 0' : 'Amount must be greater than 0');
       }
 
       if (parseFloat(amount) > availableBalance) {
-        throw new Error('Saldo tidak mencukupi');
+        throw new Error(lang === 'id' ? 'Saldo tidak mencukupi' : 'Insufficient balance');
       }
 
       await performSwap(userId, fromCurrency, toCurrency, amount);
@@ -99,7 +101,7 @@ export default function SwapModal({ userId, balances, onClose, onSuccess }: Swap
           {success ? (
             <div className="bg-emerald-500/10 border border-emerald-500/50 text-emerald-400 p-4 rounded-lg text-center">
               <div className="text-2xl mb-2">✓</div>
-              <div className="font-semibold">Swap Berhasil!</div>
+              <div className="font-semibold">{lang === 'id' ? 'Swap Berhasil!' : 'Swap Successful!'}</div>
               <div className="text-sm mt-1">
                 {amount} {fromCurrency} → {receiveAmount.toFixed(8)} {toCurrency}
               </div>
@@ -108,7 +110,7 @@ export default function SwapModal({ userId, balances, onClose, onSuccess }: Swap
             <>
               <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-600">
                 <div className="flex justify-between items-center mb-2">
-                  <label className="text-sm font-medium text-slate-300">From</label>
+                  <label className="text-sm font-medium text-slate-300">{lang === 'id' ? 'Dari' : 'From'}</label>
                   <button
                     type="button"
                     onClick={setMaxAmount}
@@ -157,7 +159,7 @@ export default function SwapModal({ userId, balances, onClose, onSuccess }: Swap
               </div>
 
               <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-600">
-                <label className="text-sm font-medium text-slate-300 block mb-2">To</label>
+                <label className="text-sm font-medium text-slate-300 block mb-2">{lang === 'id' ? 'Ke' : 'To'}</label>
                 <div className="flex gap-3">
                   <input
                     type="text"
@@ -187,7 +189,7 @@ export default function SwapModal({ userId, balances, onClose, onSuccess }: Swap
               {amount && receiveAmount > 0 && (
                 <div className="bg-slate-900/50 rounded-lg p-3 text-sm">
                   <div className="flex justify-between text-slate-400">
-                    <span>Exchange Rate</span>
+                    <span>{lang === 'id' ? 'Kurs Tukar' : 'Exchange Rate'}</span>
                     <span className="text-white">
                       1 {fromCurrency} = {(getCryptoPrice(fromCurrency) / getCryptoPrice(toCurrency)).toFixed(8)} {toCurrency}
                     </span>
@@ -199,9 +201,11 @@ export default function SwapModal({ userId, balances, onClose, onSuccess }: Swap
                 <div className="flex gap-2">
                   <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
                   <div className="text-sm text-amber-200">
-                    <p className="font-semibold mb-1">Persyaratan Swap:</p>
+                    <p className="font-semibold mb-1">{lang === 'id' ? 'Persyaratan Swap:' : 'Swap Requirements:'}</p>
                     <p className="text-xs">
-                      Anda harus memiliki minimal $10 di USDT, BNB, ETH, dan SOL untuk melakukan swap.
+                      {lang === 'id'
+                        ? 'Anda harus memiliki minimal $10 di USDT, BNB, ETH, dan SOL untuk melakukan swap.'
+                        : 'You must have at least $10 in USDT, BNB, ETH, and SOL to perform swaps.'}
                     </p>
                   </div>
                 </div>
@@ -218,7 +222,7 @@ export default function SwapModal({ userId, balances, onClose, onSuccess }: Swap
                 disabled={loading || !amount || parseFloat(amount) <= 0}
                 className="w-full bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-600 hover:to-violet-700 text-white font-semibold py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Processing...' : 'Swap Now'}
+                {loading ? (lang === 'id' ? 'Memproses...' : 'Processing...') : (lang === 'id' ? 'Swap Sekarang' : 'Swap Now')}
               </button>
             </>
           )}

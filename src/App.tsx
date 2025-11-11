@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { LanguageProvider } from './lib/LanguageContext';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import Loading from './components/Loading';
@@ -42,13 +43,15 @@ function App() {
   }
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={userId ? <Dashboard userId={userId} username={username} onLogout={handleLogout} /> : <Login onLogin={handleLogin} />} />
-        <Route path="/charts" element={<ChartsPage />} />
-        <Route path="/settings" element={userId ? <Settings userId={userId} /> : <Login onLogin={handleLogin} />} />
-      </Routes>
-    </BrowserRouter>
+    <LanguageProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={userId ? <Dashboard userId={userId} username={username} onLogout={handleLogout} /> : <Login onLogin={handleLogin} />} />
+          <Route path="/charts" element={<ChartsPage />} />
+          <Route path="/settings" element={userId ? <Settings userId={userId} /> : <Login onLogin={handleLogin} />} />
+        </Routes>
+      </BrowserRouter>
+    </LanguageProvider>
   );
 }
 

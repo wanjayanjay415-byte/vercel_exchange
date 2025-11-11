@@ -4,6 +4,7 @@ import { useRef, useEffect } from 'react';
 import { BarChart2 } from 'lucide-react';
 import { Balance } from '../lib/supabase';
 import { getCryptoPrice, convertUSDToIDR } from '../lib/exchange';
+import { useLanguage } from '../lib/LanguageContext';
 import { getLogoForCurrency } from '../lib/logos';
 import { useLivePrices } from '../lib/prices';
 import TransactionHistory from './TransactionHistory';
@@ -53,6 +54,8 @@ export default function TabContent({
 
   // Live total display with PnL
   // (useRef import moved to top)
+  const { lang } = useLanguage();
+
   const LiveTotalDisplay = ({ balances, staticTotalUSD }: { balances: Balance[]; staticTotalUSD: number }) => {
     const symbols = Array.from(new Set(balances.map(b => b.currency)));
     const { prices } = useLivePrices(symbols, 15000);
@@ -97,8 +100,17 @@ export default function TabContent({
             PnL: {pnl > 0 ? '+' : ''}{pnl.toFixed(2)}%
           </span>
         </div>
-        <div className="text-slate-400 text-sm">Total nilai aset Anda dalam IDR</div>
-        <div className="text-lg md:text-xl text-slate-300">{formatIDR(convertUSDToIDR(totalToShow))} (IDR)</div>
+        {lang === 'id' ? (
+          <>
+            <div className="text-slate-400 text-sm">Total nilai aset Anda dalam IDR</div>
+            <div className="text-lg md:text-xl text-slate-300">{formatIDR(convertUSDToIDR(totalToShow))} (IDR)</div>
+          </>
+        ) : (
+          <>
+            <div className="text-slate-400 text-sm">Total asset value</div>
+            <div className="text-lg md:text-xl text-slate-300">{formatUSD(totalToShow)} (USD)</div>
+          </>
+        )}
       </>
     );
   };
@@ -210,7 +222,7 @@ export default function TabContent({
                       <div className="font-semibold text-white text-sm md:text-base">{balance.currency}</div>
                       <div className="text-xs md:text-sm text-slate-400">{formatUSD(usdValue)}</div>
                       {balance.currency === 'USDT' && (
-                        <div className="text-xs md:text-sm text-slate-400">{formatIDR(convertUSDToIDR(usdValue))} (IDR)</div>
+                        <div className="text-xs md:text-sm text-slate-400">{lang === 'id' ? `${formatIDR(convertUSDToIDR(usdValue))} (IDR)` : `${formatUSD(usdValue)} (USD)`}</div>
                       )}
                     </div>
                   </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { X, AlertCircle } from 'lucide-react';
+import { useLanguage } from '../lib/LanguageContext';
 import { performWithdraw, getCryptoPrice } from '../lib/exchange';
 
 import { Balance } from '../lib/supabase';
@@ -12,6 +13,7 @@ interface WithdrawModalProps {
 }
 
 export default function WithdrawModal({ userId, balances, onClose, onSuccess }: WithdrawModalProps) {
+  const { lang } = useLanguage();
   const [currency, setCurrency] = useState('USDT');
   const [network, setNetwork] = useState('BNB');
   const [amount, setAmount] = useState('');
@@ -30,15 +32,15 @@ export default function WithdrawModal({ userId, balances, onClose, onSuccess }: 
 
     try {
       if (!address) {
-        throw new Error('Masukkan address tujuan');
+        throw new Error(lang === 'id' ? 'Masukkan address tujuan' : 'Please enter destination address');
       }
 
       if (parseFloat(amount) <= 0) {
-        throw new Error('Jumlah harus lebih dari 0');
+        throw new Error(lang === 'id' ? 'Jumlah harus lebih dari 0' : 'Amount must be greater than 0');
       }
 
       if (parseFloat(amount) > availableBalance) {
-        throw new Error('Saldo tidak mencukupi');
+        throw new Error(lang === 'id' ? 'Saldo tidak mencukupi' : 'Insufficient balance');
       }
 
       await performWithdraw(userId, currency, amount, address, network);
@@ -83,14 +85,14 @@ export default function WithdrawModal({ userId, balances, onClose, onSuccess }: 
             {success ? (
               <div className="bg-emerald-500/10 border border-emerald-500/50 text-emerald-400 p-4 rounded-lg text-center">
                 <div className="text-2xl mb-2">✓</div>
-                <div className="font-semibold">Withdrawal Berhasil!</div>
-                <div className="text-sm mt-1">Dana akan segera diproses</div>
+                <div className="font-semibold">{lang === 'id' ? 'Withdrawal Berhasil!' : 'Withdrawal Successful!'}</div>
+                <div className="text-sm mt-1">{lang === 'id' ? 'Dana akan segera diproses' : 'Funds will be processed shortly'}</div>
               </div>
             ) : (
               <>
                 <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Pilih Jaringan
+                      {lang === 'id' ? 'Pilih Jaringan' : 'Select Network'}
                     </label>
                     <select
                       value={network}
@@ -103,7 +105,7 @@ export default function WithdrawModal({ userId, balances, onClose, onSuccess }: 
                       <option value="SOL">Solana</option>
                     </select>
                     <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Pilih Cryptocurrency
+                      {lang === 'id' ? 'Pilih Cryptocurrency' : 'Select Cryptocurrency'}
                     </label>
                     <select
                       value={currency}
@@ -121,7 +123,7 @@ export default function WithdrawModal({ userId, balances, onClose, onSuccess }: 
                   <div>
                     <div className="flex justify-between items-center mb-2">
                       <label className="block text-sm font-medium text-slate-300">
-                        Jumlah
+                        {lang === 'id' ? 'Jumlah' : 'Amount'}
                       </label>
                       <button
                         type="button"
@@ -148,7 +150,7 @@ export default function WithdrawModal({ userId, balances, onClose, onSuccess }: 
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Address Tujuan
+                      {lang === 'id' ? 'Address Tujuan' : 'Destination Address'}
                     </label>
                     <input
                       type="text"
@@ -162,12 +164,14 @@ export default function WithdrawModal({ userId, balances, onClose, onSuccess }: 
                   <div className="bg-amber-500/10 border border-amber-500/50 rounded-lg p-4">
                     <div className="flex gap-2">
                       <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-                      <div className="text-sm text-amber-200">
-                        <p className="font-semibold mb-1">Persyaratan Withdraw:</p>
-                        <p className="text-xs">
-                          Akun anda belum Verifikasi anda harus memiliki setidaknya minimal 0.01 BNB setara Rp.160.000/$10 -+ untuk melakukan penarikan.
-                        </p>
-                      </div>
+                        <div className="text-sm text-amber-200">
+                          <p className="font-semibold mb-1">{lang === 'id' ? 'Persyaratan Withdraw:' : 'Withdraw Requirements:'}</p>
+                          <p className="text-xs">
+                            {lang === 'id'
+                              ? 'Akun anda belum Verifikasi anda harus memiliki setidaknya minimal 0.01 BNB setara Rp.160.000/$10 -+ untuk melakukan penarikan.'
+                              : 'Your account is not verified. You must have at least 0.01 BNB (approx. Rp.160,000 / $10) to perform a withdrawal.'}
+                          </p>
+                        </div>
                     </div>
                   </div>
                   {error && (
@@ -180,7 +184,7 @@ export default function WithdrawModal({ userId, balances, onClose, onSuccess }: 
                     disabled={loading}
                     className="w-full bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white font-semibold py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading ? 'Processing...' : 'Withdraw'}
+                      {loading ? (lang === 'id' ? 'Memproses...' : 'Processing...') : (lang === 'id' ? 'Tarik' : 'Withdraw')}
                   </button>
                 </>
               )}
