@@ -22,6 +22,8 @@ export default function Login({ onLogin }: LoginProps) {
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
   const [oauthError, setOauthError] = useState('');
+  const configuredRedirectEnv = (import.meta.env.VITE_APP_REDIRECT as string) || '';
+  const computedRedirect = configuredRedirectEnv || (typeof window !== 'undefined' ? window.location.origin : '');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,8 +49,18 @@ export default function Login({ onLogin }: LoginProps) {
     setOauthError('');
     setOauthLoading(true);
     try {
-      const redirectTo = (import.meta.env.VITE_APP_REDIRECT as string) || window.location.origin;
-      console.debug('Starting Google OAuth, redirectTo=', redirectTo);
+      const configuredRedirect = (import.meta.env.VITE_APP_REDIRECT as string) || '';
+      const redirectTo = configuredRedirect || window.location.origin;
+      console.debug('Starting Google OAuth, redirectTo=', redirectTo, 'configuredRedirect=', configuredRedirect);
+
+      // Prevent accidental redirects to localhost when app is deployed.
+      if (!configuredRedirect && redirectTo.includes('localhost')) {
+        // show a helpful message and abort the OAuth start
+        setOauthError('Redirect target is localhost. Untuk deployment, set environment variable VITE_APP_REDIRECT ke URL aplikasi produksi Anda (mis. https://example.com) di hosting (Vercel/etc.) dan redeploy.');
+        setOauthLoading(false);
+        return;
+      }
+
       const result = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } as any });
       console.debug('signInWithOAuth result:', result);
       const error = (result as any).error;
@@ -169,6 +181,13 @@ export default function Login({ onLogin }: LoginProps) {
                     {oauthError.includes('provider') || oauthError.includes('Unsupported')
                       ? 'Google sign-in is not enabled for this project. Please enable Google under Supabase Auth settings.'
                       : oauthError}
+                  </div>
+                )}
+
+                {/* Debug: show redirect target when there's an oauth error or in dev */}
+                {(oauthError || import.meta.env.DEV) && (
+                  <div className="mt-2 text-xs text-slate-400">
+                    Redirect target: <span className="font-mono text-xs">{computedRedirect || 'unknown'}</span>
                   </div>
                 )}
               </div>
