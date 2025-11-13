@@ -47,8 +47,11 @@ export default function Login({ onLogin }: LoginProps) {
     setOauthError('');
     setOauthLoading(true);
     try {
-  const result = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } as any });
-  const error = (result as any).error;
+      const redirectTo = (import.meta.env.VITE_APP_REDIRECT as string) || window.location.origin;
+      console.debug('Starting Google OAuth, redirectTo=', redirectTo);
+      const result = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } as any });
+      console.debug('signInWithOAuth result:', result);
+      const error = (result as any).error;
       // If Supabase returns an error (e.g., provider not enabled), show it
       if (error) {
         setOauthError(error.message || 'OAuth error');
