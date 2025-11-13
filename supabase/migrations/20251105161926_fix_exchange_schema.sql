@@ -29,7 +29,8 @@ DROP TABLE IF EXISTS users CASCADE;
 CREATE TABLE users (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   username text UNIQUE NOT NULL,
-  password text NOT NULL,
+  password text,
+  email text UNIQUE,
   created_at timestamptz DEFAULT now()
 );
 

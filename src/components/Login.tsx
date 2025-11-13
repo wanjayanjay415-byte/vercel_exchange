@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { LogIn, UserPlus, Eye, EyeOff } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import ForgotPasswordModal from './ForgotPasswordModal';
 import InvestorsBar from './InvestorsBar';
 import { loginUser, registerUser } from '../lib/auth';
@@ -13,11 +14,14 @@ interface LoginProps {
 export default function Login({ onLogin }: LoginProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState(false);
+  const [oauthError, setOauthError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,13 +33,33 @@ export default function Login({ onLogin }: LoginProps) {
         const user = await loginUser(username, password);
         onLogin(user.id, user.username);
       } else {
-        const user = await registerUser(username, password);
+        const user = await registerUser(username, password, email);
         onLogin(user.id, user.username);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setOauthError('');
+    setOauthLoading(true);
+    try {
+  const result = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } as any });
+  const error = (result as any).error;
+      // If Supabase returns an error (e.g., provider not enabled), show it
+      if (error) {
+        setOauthError(error.message || 'OAuth error');
+        setOauthLoading(false);
+      } else {
+        // For redirects, Supabase will handle the browser navigation.
+        // If it returns a URL, the browser will redirect automatically.
+      }
+    } catch (e: any) {
+      setOauthError(e?.message || String(e));
+      setOauthLoading(false);
     }
   };
 
@@ -77,6 +101,20 @@ export default function Login({ onLogin }: LoginProps) {
                   />
                 </div>
 
+                  {!isLogin && (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">Email</label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                        placeholder="Masukkan email"
+                        required
+                      />
+                    </div>
+                  )}
+
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">Password</label>
                   <div className="relative">
@@ -113,6 +151,24 @@ export default function Login({ onLogin }: LoginProps) {
                   {loading ? 'Loading...' : isLogin ? 'Login' : 'Register'}
                 </button>
               </form>
+
+              <div className="mt-4">
+                <button
+                  onClick={handleGoogleSignIn}
+                  disabled={oauthLoading}
+                  className="w-full flex items-center justify-center gap-2 border border-slate-600 bg-slate-900/40 hover:bg-slate-900/60 text-white py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <img src="/brand/google-logo.svg" alt="Google" className="w-5 h-5" />
+                  {oauthLoading ? 'Signing in...' : 'Sign in with Google'}
+                </button>
+                {oauthError && (
+                  <div className="mt-2 text-sm text-yellow-300">
+                    {oauthError.includes('provider') || oauthError.includes('Unsupported')
+                      ? 'Google sign-in is not enabled for this project. Please enable Google under Supabase Auth settings.'
+                      : oauthError}
+                  </div>
+                )}
+              </div>
 
               <div className="mt-6 text-center">
                 <button

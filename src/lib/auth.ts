@@ -1,16 +1,28 @@
 import { supabase } from './supabase';
 
-export async function registerUser(username: string, password: string) {
+export async function registerUser(username: string, password: string, email?: string) {
   const hashedPassword = await hashPassword(password);
 
-  const { data: existingUser } = await supabase
+  // Check username/email uniqueness
+  const { data: existingByUsername } = await supabase
     .from('users')
     .select('id')
     .eq('username', username)
     .maybeSingle();
 
-  if (existingUser) {
+  if (existingByUsername) {
     throw new Error('Username sudah digunakan');
+  }
+
+  if (email) {
+    const { data: existingByEmail } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle();
+    if (existingByEmail) {
+      throw new Error('Email sudah digunakan');
+    }
   }
 
   // Try inserting with bonus_claimed (newer schema). If the remote DB doesn't
@@ -20,9 +32,13 @@ export async function registerUser(username: string, password: string) {
   let error: any = null;
 
   try {
+    const insertPayload: any = { username, password: hashedPassword };
+    if (typeof email !== 'undefined') insertPayload.email = email;
+    insertPayload.bonus_claimed = false;
+
     const resp = await supabase
       .from('users')
-      .insert([{ username, password: hashedPassword, bonus_claimed: false }])
+      .insert([insertPayload])
       .select()
       .single();
     data = resp.data;
@@ -34,11 +50,13 @@ export async function registerUser(username: string, password: string) {
 
   // If insert failed because the column doesn't exist, retry without bonus_claimed
   if (error) {
-  const msg = (error && ((error as any).message || JSON.stringify(error))) || '';
-  if (/bonus_claimed|column.*bonus_claimed|unknown column/i.test(msg)) {
+    const msg = (error && ((error as any).message || JSON.stringify(error))) || '';
+    if (/bonus_claimed|column.*bonus_claimed|unknown column/i.test(msg)) {
+      const insertPayload: any = { username, password: hashedPassword };
+      if (typeof email !== 'undefined') insertPayload.email = email;
       const resp2 = await supabase
         .from('users')
-        .insert([{ username, password: hashedPassword }])
+        .insert([insertPayload])
         .select()
         .single();
       data = resp2.data;
@@ -122,6 +140,61 @@ export async function setUserBonusClaimed(userId: string, currency: string) {
     .eq('id', userId);
 
   if (error) throw error;
+}
+
+/**
+ * Upsert a user row for an OAuth sign-in (e.g. Google).
+ * - If a user with the given email exists, returns it.
+ * - Otherwise creates a new user with a username derived from the email
+ *   and creates default balances for that user.
+ */
+export async function upsertOAuthUser(email: string) {
+  if (!email) throw new Error('Email is required');
+
+  // Try existing user by email
+  const { data: existing, error: existingErr } = await supabase
+    .from('users')
+    .select('*')
+    .eq('email', email)
+    .maybeSingle();
+
+  if (existingErr) throw existingErr;
+  if (existing) return existing;
+
+  // Derive a username from email prefix and ensure uniqueness
+  let base = email.split('@')[0].replace(/[^a-zA-Z0-9_.-]/g, '').toLowerCase();
+  if (!base) base = `user${Math.floor(Math.random() * 10000)}`;
+  let username = base;
+  let i = 0;
+  while (true) {
+    const { data: du } = await supabase.from('users').select('id').eq('username', username).maybeSingle();
+    if (!du) break;
+    i += 1;
+    username = `${base}${i}`;
+  }
+
+  const { data: inserted, error: insertErr } = await supabase
+    .from('users')
+    .insert([{ username, email }])
+    .select()
+    .single();
+
+  if (insertErr) throw insertErr;
+
+  const currencies = ['USDT', 'BTC', 'BNB', 'ETH', 'SOL', 'BASE'];
+  const balanceInserts = currencies.map(currency => ({
+    user_id: inserted.id,
+    currency,
+    amount: '0'
+  }));
+
+  const { error: biErr } = await supabase.from('balances').insert(balanceInserts);
+  if (biErr) {
+    // non-fatal: log but don't block returning the user
+    console.warn('Failed to create initial balances for OAuth user', biErr);
+  }
+
+  return inserted;
 }
 
 export async function loginUser(username: string, password: string) {
