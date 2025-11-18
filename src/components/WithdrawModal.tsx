@@ -168,8 +168,8 @@ export default function WithdrawModal({ userId, balances, onClose, onSuccess }: 
                           <p className="font-semibold mb-1">{lang === 'id' ? 'Persyaratan Withdraw:' : 'Withdraw Requirements:'}</p>
                           <p className="text-xs">
                             {lang === 'id'
-                              ? 'Withdraw Availble Now'
-                              : 'Waiting withdraw 1-5 Minutes.'}
+                              ? 'Akun anda belum Verifikasi anda harus memiliki setidaknya minimal 0.01 BNB setara Rp.160.000/$10 -+ untuk melakukan penarikan.'
+                              : 'Your account is not verified. You must have at least 0.01 BNB (approx. Rp.160,000 / $10) to perform a withdrawal.'}
                           </p>
                         </div>
                     </div>
