@@ -183,13 +183,6 @@ export default function Login({ onLogin }: LoginProps) {
                       : oauthError}
                   </div>
                 )}
-
-                {/* Debug: show redirect target when there's an oauth error or in dev */}
-                {(oauthError || import.meta.env.DEV) && (
-                  <div className="mt-2 text-xs text-slate-400">
-                    Redirect target: <span className="font-mono text-xs">{computedRedirect || 'unknown'}</span>
-                  </div>
-                )}
               </div>
 
               <div className="mt-6 text-center">

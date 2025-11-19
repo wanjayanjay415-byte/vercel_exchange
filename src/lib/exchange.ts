@@ -190,8 +190,8 @@ export async function getUserTransactions(userId: string, limit = 10) {
  * The bonus will be credited to the chosen currency (BTC, USDT, SOL, BNB).
  */
 export async function claimBonus(userId: string, currency: string) {
-  const allowed = ['BTC', 'USDT', 'SOL', 'BNB'];
-  if (!allowed.includes(currency)) throw new Error('Currency tidak valid untuk bonus');
+  // Bonus claim feature is disabled globally.
+  throw new Error('Fitur klaim bonus telah dinonaktifkan');
 
   // check user flag. Be resilient if remote DB doesn't have bonus_claimed column yet.
   let user: any = null;

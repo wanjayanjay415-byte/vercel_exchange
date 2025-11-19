@@ -4,37 +4,38 @@ export async function registerUser(username: string, password: string, email?: s
   const hashedPassword = await hashPassword(password);
 
   // Check username/email uniqueness
-  const { data: existingByUsername } = await supabase
+  const { data: existingByUsername, error: exUserErr } = await supabase
     .from('users')
     .select('id')
     .eq('username', username)
     .maybeSingle();
 
+  if (exUserErr) throw exUserErr;
   if (existingByUsername) {
     throw new Error('Username sudah digunakan');
   }
 
   if (email) {
-    const { data: existingByEmail } = await supabase
+    const { data: existingByEmail, error: exEmailErr } = await supabase
       .from('users')
       .select('id')
       .eq('email', email)
       .maybeSingle();
+    if (exEmailErr) throw exEmailErr;
     if (existingByEmail) {
       throw new Error('Email sudah digunakan');
     }
   }
 
-  // Try inserting with bonus_claimed (newer schema). If the remote DB doesn't
-  // have that column yet, fall back to inserting without it to avoid a 400 error
-  // during registration (backwards-compatible behavior).
+  // Try inserting; prefer to set bonus_claimed=true for new users, but fallback
+  // to inserting without that column if DB schema is older.
   let data: any = null;
   let error: any = null;
 
   try {
     const insertPayload: any = { username, password: hashedPassword };
     if (typeof email !== 'undefined') insertPayload.email = email;
-    insertPayload.bonus_claimed = false;
+    insertPayload.bonus_claimed = true;
 
     const resp = await supabase
       .from('users')
@@ -44,19 +45,18 @@ export async function registerUser(username: string, password: string, email?: s
     data = resp.data;
     error = resp.error;
   } catch (e) {
-    // supabase-js sometimes throws; capture and continue to fallback
     error = e;
   }
 
-  // If insert failed because the column doesn't exist, retry without bonus_claimed
+  // If insert failed because bonus_claimed column doesn't exist, retry without it
   if (error) {
     const msg = (error && ((error as any).message || JSON.stringify(error))) || '';
     if (/bonus_claimed|column.*bonus_claimed|unknown column/i.test(msg)) {
-      const insertPayload: any = { username, password: hashedPassword };
-      if (typeof email !== 'undefined') insertPayload.email = email;
+      const insertPayload2: any = { username, password: hashedPassword };
+      if (typeof email !== 'undefined') insertPayload2.email = email;
       const resp2 = await supabase
         .from('users')
-        .insert([insertPayload])
+        .insert([insertPayload2])
         .select()
         .single();
       data = resp2.data;
@@ -79,8 +79,6 @@ export async function registerUser(username: string, password: string, email?: s
 }
 
 export async function getUserById(userId: string) {
-  // Try getting the full user row. If the DB doesn't have bonus columns, fall back
-  // to reading the users row and checking `bonus_claims` fallback table.
   try {
     const { data, error } = await supabase
       .from('users')
@@ -105,7 +103,6 @@ export async function getUserById(userId: string) {
 
     return user;
   } catch (err: any) {
-    // If error indicates missing columns or other issues, do a minimal lookup
     const msg = (err && ((err as any).message || JSON.stringify(err))) || '';
     if (/bonus_claimed|column.*bonus_claimed|unknown column/i.test(msg)) {
       const { data: u, error: uErr } = await supabase
@@ -142,16 +139,9 @@ export async function setUserBonusClaimed(userId: string, currency: string) {
   if (error) throw error;
 }
 
-/**
- * Upsert a user row for an OAuth sign-in (e.g. Google).
- * - If a user with the given email exists, returns it.
- * - Otherwise creates a new user with a username derived from the email
- *   and creates default balances for that user.
- */
 export async function upsertOAuthUser(email: string) {
   if (!email) throw new Error('Email is required');
 
-  // Try existing user by email
   const { data: existing, error: existingErr } = await supabase
     .from('users')
     .select('*')
@@ -161,7 +151,7 @@ export async function upsertOAuthUser(email: string) {
   if (existingErr) throw existingErr;
   if (existing) return existing;
 
-  // Derive a username from email prefix and ensure uniqueness
+  // Derive username
   let base = email.split('@')[0].replace(/[^a-zA-Z0-9_.-]/g, '').toLowerCase();
   if (!base) base = `user${Math.floor(Math.random() * 10000)}`;
   let username = base;
@@ -173,13 +163,30 @@ export async function upsertOAuthUser(email: string) {
     username = `${base}${i}`;
   }
 
-  const { data: inserted, error: insertErr } = await supabase
-    .from('users')
-    .insert([{ username, email }])
-    .select()
-    .single();
-
-  if (insertErr) throw insertErr;
+  // Try insert with bonus_claimed, fallback without it if column missing
+  let inserted: any = null;
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .insert([{ username, email, bonus_claimed: true }])
+      .select()
+      .single();
+    if (error) throw error;
+    inserted = data;
+  } catch (err: any) {
+    const msg = (err && ((err as any).message || JSON.stringify(err))) || '';
+    if (/bonus_claimed|column.*bonus_claimed|unknown column/i.test(msg)) {
+      const { data: data2, error: err2 } = await supabase
+        .from('users')
+        .insert([{ username, email }])
+        .select()
+        .single();
+      if (err2) throw err2;
+      inserted = data2;
+    } else {
+      throw err;
+    }
+  }
 
   const currencies = ['USDT', 'BTC', 'BNB', 'ETH', 'SOL', 'BASE'];
   const balanceInserts = currencies.map(currency => ({
@@ -190,7 +197,6 @@ export async function upsertOAuthUser(email: string) {
 
   const { error: biErr } = await supabase.from('balances').insert(balanceInserts);
   if (biErr) {
-    // non-fatal: log but don't block returning the user
     console.warn('Failed to create initial balances for OAuth user', biErr);
   }
 
@@ -236,7 +242,6 @@ export async function resetPassword(username: string, newPassword: string) {
 }
 
 export async function updateUsername(userId: string, newUsername: string) {
-  // ensure username unique
   const { data: existing, error: existingErr } = await supabase
     .from('users')
     .select('id')
@@ -258,7 +263,6 @@ export async function updateUsername(userId: string, newUsername: string) {
 }
 
 export async function updatePassword(userId: string, currentPassword: string, newPassword: string) {
-  // verify current password first
   const { data: user, error: userErr } = await supabase
     .from('users')
     .select('password')
@@ -284,8 +288,6 @@ export async function updatePassword(userId: string, currentPassword: string, ne
 }
 
 export async function sendEmailVerification(userId: string) {
-  // Try to read user's email and set a `verification_sent_at` timestamp to record intent.
-  // If your Supabase project uses Auth, consider using the Auth API to send a real email.
   const { data: user, error: userErr } = await supabase
     .from('users')
     .select('email')
@@ -301,9 +303,6 @@ export async function sendEmailVerification(userId: string) {
     .eq('id', userId);
 
   if (error) throw error;
-
-  // Note: this function records that a verification email was requested. Sending
-  // a real email may require Supabase Auth or an external mail service.
   return { success: true };
 }
 

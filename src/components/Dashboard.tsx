@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { LogOut, TrendingUp, Send, Settings as SettingsIcon } from 'lucide-react';
 import { useLanguage } from '../lib/LanguageContext';
 import SendModal from './SendModal';
-import ClaimBonusCard from './ClaimBonusCard';
 import { getUserById } from '../lib/auth';
 import { getUserBalances, getTotalUSDBalance } from '../lib/exchange';
 import { Balance } from '../lib/supabase';
@@ -137,18 +136,7 @@ export default function Dashboard({ userId, username, onLogout }: DashboardProps
     <VideoBackground>
       <div className="min-h-screen">
         <div className="relative max-w-7xl mx-auto px-4 py-6 md:py-8">
-          {!bonusClaimed && !claimDismissed && (
-            <ClaimBonusCard
-              userId={userId}
-              onClaimSuccess={() => { setBonusClaimed(true); handleRefresh(); }}
-              onClose={() => {
-                try {
-                  localStorage.setItem(`claimDismissed_${userId}`, '1');
-                } catch (e) {}
-                setClaimDismissed(true);
-              }}
-            />
-          )}
+          {/* Bonus claim card disabled */}
           <header className="flex justify-between items-center mb-6 md:mb-8">
             <div className="flex items-center gap-2 md:gap-3 min-w-0">
               <div className="bg-gradient-to-br from-emerald-400 to-cyan-500 p-2 rounded-lg flex-shrink-0">
